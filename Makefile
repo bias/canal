@@ -2,16 +2,16 @@ LEX = flex
 YACC = bison
 YFLAGS = -d
 
-objects = token.o parse.o c.o 
+objects = token.o parse.o
 
-c: $(objects)
+canal: $(objects)
 
-token.o: token.l parse.h c.h
+token.o: token.l parse.h canal.h
 
-parse.o: parse.y c.h
+parse.o: parse.y canal.h
 
 clean:
-	rm -f c parse.h parse.c $(objects)
+	rm -f canal parse.h parse.c $(objects)
 
 %.h: %.y
 	$(YACC) $(YFLAGS) $<

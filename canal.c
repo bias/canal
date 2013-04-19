@@ -5,7 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "c.h"
+
+#include "canal.h"
 
 /* The symbol table: a chain of `struct symrec'.  */
 symrec *sym_table;

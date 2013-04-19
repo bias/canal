@@ -1,7 +1,7 @@
 %{
 #define YYSTYPE char *
 #include <stdio.h>
-#include "c.h"
+#include "canal.h"
 extern int yylex();
 extern void yyerror(const char *);
 extern int yyparse();

@@ -26,7 +26,8 @@ WS  [ \t\v\n\f]
 %{
 #include <stdio.h>
 #include "parse.h"
-#include "c.h"
+
+#include "canal.h"
 
 static int check_type(void);
 
