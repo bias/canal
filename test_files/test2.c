@@ -1,11 +1,12 @@
+/*
+ * 		main() -- possibly run C preprocessor before yyparse()
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "canal.h"
-
-/* The symbol table: a chain of `struct symrec'.  */
-symrec *sym_table;
 
 int usage(register char *name) {
 	fputs("usage: ", stderr);
@@ -74,22 +75,9 @@ int cpp(int argc, char **argv) {
 	return i;
 }
 
-int sym_type(const char *sym_name) {
-   symrec *ptr;
-   for (ptr = sym_table; ptr != (symrec *) 0;
-		ptr = (symrec *)ptr->next)
-	 if (strcmp (ptr->name,sym_name) == 0)
-	   return ptr->type;
-   return 0;
-}
-
-symrec* put_sym(const char *sym_name, int sym_type) {
-       symrec *ptr = (symrec *) malloc (sizeof (symrec));
-       ptr->name = (char *) malloc (strlen (sym_name) + 1);
-       strcpy (ptr->name,sym_name);
-       ptr->type = sym_type;
-       ptr->value = 0;  
-       ptr->next = (struct symrec *)sym_table;
-       sym_table = ptr;
-       return ptr;
+/* NOTE C fails to be LR(1) because of a conflict with identifier and typedef-name */
+/* XXX so, we're going to skip this */
+int sym_type(const char *s) {
+	/* TYPEDEF_NAME ENUMERATION_CONSTANT IDENTIFIER */
+	return 0;
 }

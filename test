@@ -1,0 +1,11 @@
+#!/bin/sh
+
+for f in $(ls test_files); do
+	./canal < test_files/$f > /dev/null
+    EXIT="$?"
+	if [[ $EXIT -ne 0 ]]; then
+		echo $f failed
+    else
+        echo $f passed
+    fi
+done
