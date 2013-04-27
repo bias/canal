@@ -3,11 +3,12 @@
 #include <string.h>
 
 #include "canal.h"
-#include "parse.h" // for symbol definitions
+#include "parse.h" /* for symbol definitions */
 
-/* The symbol table: a chain of `struct symrec'.  */
+/* The symbol table */
 symrec *sym_table;
 
+/* The identifier resolution stack */
 ident *id_stack;
 
 extern int yydebug;
@@ -91,8 +92,6 @@ int sym_type(const char *sym_name) {
 
 symrec* put_sym(const char *sym_name, int sym_type) {
 
-	fprintf(stderr, "##### ### # putting sym: %s\n", sym_name);
-
 	symrec *ptr = (symrec *) malloc (sizeof (symrec));
 	ptr->name = (char *) malloc (strlen (sym_name) + 1);
 	strcpy (ptr->name,sym_name);
@@ -111,44 +110,34 @@ symrec* put_sym(const char *sym_name, int sym_type) {
 }
 
 ident* push_ident(int sym_type) {
-	switch (sym_type) {
-		case TYPEDEF_NAME:			
-			fprintf(stderr, "***** *** * pushing ident: type\n"); break;
-		case ENUMERATION_CONSTANT:			
-			fprintf(stderr, "***** *** * pushing ident: cons\n"); break;
-		default:
-			fprintf(stderr, "***** *** * pushing ident: iden\n");
-	}
-
+	fprintf(stderr, "\t *pushing %d onto stack\n", sym_type);
 	ident *id = (ident *) malloc (sizeof (ident));	
 	id->type = sym_type;
-	id->previous = (struct ident *)id_stack; 
+	id->previous = (ident *)id_stack; 
 	id_stack = id;
-
-	fprintf(stderr, "----- --- - id_stack: ");
-	ident *ptr;
-	for (ptr = id_stack; ptr != (ident *) 0; ptr = (ident *)ptr->previous)
-		fprintf(stderr, "%d, ", ptr->type);
-	fprintf(stderr, "\n");
-
 	return id;
 }
 
-void pop_ident(char const *sym_name) {
+void cur_ident(char const *name) {
+	if ( id_stack != NULL ) {
+		fprintf(stderr, "\t swap cur name %s to %s\n", id_stack->name, name);
+		id_stack->name = name;	
+	}
+}
+
+void pop_ident() {
 	ident *id = id_stack;
 	if (id != NULL) {
-		if (sym_name != NULL)
-			if (id->type != IDENTIFIER)
-				put_sym(sym_name, id->type);
-		switch (id->type) {
-			case TYPEDEF_NAME:			
-				fprintf(stderr, "***** *** * popping ident: type with %s\n", sym_name); break;
-			case ENUMERATION_CONSTANT:			
-				fprintf(stderr, "***** *** * popping ident: cons with %s\n", sym_name); break;
-			default:
-				fprintf(stderr, "***** *** * popping ident: iden with %s\n", sym_name);
-		}
-		id_stack = id->previous;	
+		if (id->name != NULL)
+			put_sym(id->name, id->type);
+		else
+			fprintf(stderr, "\t no cur name!\n");
+		fprintf(stderr, "\t *popping\n");
+		if ( id->previous == NULL )
+			id_stack = NULL;
+		else
+			id_stack = id->previous;	
+		id->name = NULL;
 		free(id);
-	}
+	} 
 }

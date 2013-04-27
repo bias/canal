@@ -2,15 +2,17 @@ extern int yyparse();
 
 int cpp(int, char **);
 
+/*
+ * Symbol table
+ */
+
 /* Data type for links in the chain of symbols.  */
-struct symrec {
+typedef struct symrec {
   char *name;  /* name of symbol */
   int type;    /* type of symbol: ident, type_def_name, enumeration constant */
   int value;   /* incase we want to save cont values */
   struct symrec *next;  /* link field */
-};
-
-typedef struct symrec symrec;
+} symrec;
 
 /* The symbol table: a chain of `struct symrec'.  */
 extern symrec *sym_table;
@@ -18,13 +20,30 @@ extern symrec *sym_table;
 symrec *put_sym(char const *, int);
 int sym_type(const char *);
 
-/* ident flag */
+
+/*
+ * Identifier stack
+ * 
+ * typedef_name will always resolve as either 
+ *  - the last ident before a semicolon 
+ *  - the ident previous to a struct/union block
+ *
+ *  enumeration_constant will ???
+ */
+
 typedef struct ident {
   int type;
+  char const *name;
   struct ident *previous; 
 } ident;
 
 extern ident *id_stack;
 
+/* push new typedef/enum onto stack */
 ident *push_ident(int);
-void pop_ident(char const *);
+
+/* use most current ident for the top's name */
+void cur_ident(char const *);
+
+/* resolve the typedef/enum as the current name */
+void pop_ident();

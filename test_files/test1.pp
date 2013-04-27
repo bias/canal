@@ -7,8 +7,8 @@ typedef struct tnode *Tptr;
 typedef Tptr *TPptr;
 
 typedef union YYSTYPE {
-  char *a;
   int fn;
+  char *a;
 } YYSTYPE;
 
 extern YYSTYPE yylval;

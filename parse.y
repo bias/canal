@@ -55,7 +55,7 @@ constant
 	;
 
 enumeration_constant		/* before it has been defined as such */
-	: IDENTIFIER                        { pop_ident($<string>1); }
+	: IDENTIFIER                        { cur_ident($<string>1); }
 	;
 
 string
@@ -211,8 +211,8 @@ constant_expression
 	;
 
 declaration
-	: declaration_specifiers ';'
-	| declaration_specifiers init_declarator_list ';'
+	: declaration_specifiers ';'								{ fprintf(stderr, "y:declaration_specifiers\n"); pop_ident(); }
+	| declaration_specifiers init_declarator_list ';'			{ fprintf(stderr, "y:declaration_specifiers init_declarator_list\n"); pop_ident(); }
 	| static_assert_declaration
 	;
 
@@ -269,20 +269,15 @@ type_specifier
 	;
 
 struct_or_union_specifier
-	: STRUCT '{' struct_declaration_list '}'                           { fprintf(stderr, "y:struct\n") ; pop_ident(NULL); }
-	| STRUCT IDENTIFIER '{' struct_declaration_list '}'                { fprintf(stderr, "y:struct%s\n", $<string>2); put_sym($<string>2, TYPEDEF_NAME); pop_ident(NULL); }
-	| STRUCT IDENTIFIER                                                { fprintf(stderr, "y:struct%s\n", $<string>2); pop_ident(NULL); }
-	| UNION '{' struct_declaration_list '}'                           { fprintf(stderr, "y:union\n") ; pop_ident(NULL); }
-	| UNION IDENTIFIER '{' struct_declaration_list '}'                { fprintf(stderr, "y:union %s\n", $<string>2); put_sym($<string>2, TYPEDEF_NAME); pop_ident(NULL); }
-	| UNION IDENTIFIER                                                { fprintf(stderr, "y:union %s\n", $<string>2); pop_ident(NULL); }
+	: struct_or_union '{' struct_declaration_list '}'                           { fprintf(stderr, "y:struct\n") ; cur_ident(NULL); }
+	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'                { fprintf(stderr, "y:struct%s\n", $<string>2); cur_ident($<string>2); }
+	| struct_or_union IDENTIFIER                                                { fprintf(stderr, "y:struct%s\n", $<string>2); cur_ident($<string>2); }
 	;
 
-/*
 struct_or_union
 	: STRUCT                                                                    
 	| UNION                                                                     
 	;
-*/
 
 struct_declaration_list
 	: struct_declaration                                                        
@@ -290,8 +285,8 @@ struct_declaration_list
 	;
 
 struct_declaration
-	: specifier_qualifier_list ';'	        /* for anonymous struct/union */    
-	| specifier_qualifier_list struct_declarator_list ';'
+	: specifier_qualifier_list ';'	        /* for anonymous struct/union */ { fprintf(stderr, "y:specifier_qualifier_list %s\n", $<string>1); pop_ident(); }
+	| specifier_qualifier_list struct_declarator_list ';'					 { fprintf(stderr, "y:specifier_qualifier_list struct_declarator_list %s %s\n", $<string>1, $<string>2); pop_ident(); }	
 	| static_assert_declaration
 	;
 
@@ -303,14 +298,14 @@ specifier_qualifier_list
 	;
 
 struct_declarator_list
-	: struct_declarator
+	: struct_declarator														{ fprintf(stderr, "y:struct_declarator %s\n", $<string>1); push_ident(0); }
 	| struct_declarator_list ',' struct_declarator
 	;
 
 struct_declarator
 	: ':' constant_expression
 	| declarator ':' constant_expression
-	| declarator
+	| declarator															{ fprintf(stderr, "y:declarator %s\n", $<string>1); }
 	;
 
 enum_specifier
@@ -327,8 +322,8 @@ enumerator_list
 	;
 
 enumerator	/* XXX identifiers must be flagged as ENUMERATION_CONSTANT */
-	: enumeration_constant '=' constant_expression          { push_ident(ENUMERATION_CONSTANT); }
-	| enumeration_constant                                  { push_ident(ENUMERATION_CONSTANT); }
+	: enumeration_constant '=' constant_expression          
+	| enumeration_constant                                  
 	;
 
 atomic_type_specifier
@@ -358,7 +353,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER                                                                            { pop_ident($<string>1); }
+	: IDENTIFIER                                                                            { cur_ident($<string>1); }
 	| '(' declarator ')'
 	| direct_declarator '[' ']'
 	| direct_declarator '[' '*' ']'
@@ -404,13 +399,13 @@ parameter_declaration
 	;
 
 identifier_list
-	: IDENTIFIER                                                    { fprintf(stderr, "y:identifier_list\n"); pop_ident($<string>1); }
-	| identifier_list ',' IDENTIFIER                                { fprintf(stderr, "y:identifier_list\n"); pop_ident($<string>3); }
+	: IDENTIFIER                                                    { fprintf(stderr, "y:identifier_list\n"); cur_ident($<string>1); }
+	| identifier_list ',' IDENTIFIER                                { fprintf(stderr, "y:identifier_list\n"); cur_ident($<string>3); }
 	;
 
 type_name
-	: specifier_qualifier_list abstract_declarator
-	| specifier_qualifier_list
+	: specifier_qualifier_list abstract_declarator					{ fprintf(stderr, "y:TYPENAME %s %s\n", $<string>1, $<string>2); }
+	| specifier_qualifier_list										{ fprintf(stderr, "y:TYPENAME %s", $<string>1); }
 	;
 
 abstract_declarator
@@ -505,8 +500,8 @@ block_item
 	;
 
 expression_statement
-	: ';'
-	| expression ';'
+	: ';'																		{ fprintf(stderr, "y:declaration\n"); pop_ident(); }
+	| expression ';'															{ fprintf(stderr, "y:declaration\n"); pop_ident(); }
 	;
 
 selection_statement
