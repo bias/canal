@@ -28,7 +28,7 @@ int sym_type(const char *);
  *  - the last ident before a semicolon 
  *  - the ident previous to a struct/union block
  *
- *  enumeration_constant will ???
+ *  enumeration_constant can be directly put in the table
  */
 
 typedef struct ident {
@@ -39,11 +39,11 @@ typedef struct ident {
 
 extern ident *id_stack;
 
-/* push new typedef/enum onto stack */
+/* push new typedef onto stack */
 ident *push_ident(int);
 
 /* use most current ident for the top's name */
 void cur_ident(char const *);
 
-/* resolve the typedef/enum as the current name */
+/* resolve the typedef as the current name */
 void pop_ident();

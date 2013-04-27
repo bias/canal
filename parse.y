@@ -32,8 +32,6 @@ extern int yyparse();
 
 %debug
 
-/* NOTE pop_ident looks for a flagged typedef_name or enumeration_constant and pushes the respective ident onto the table */
-
 %%
 
 statement 
@@ -55,7 +53,7 @@ constant
 	;
 
 enumeration_constant		/* before it has been defined as such */
-	: IDENTIFIER                        { cur_ident($<string>1); }
+	: IDENTIFIER                        { fprintf(stderr, "ENUMERATION_CONSTANT^ %s\n", $<string>1); put_sym($<string>1, ENUMERATION_CONSTANT); }
 	;
 
 string
