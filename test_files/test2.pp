@@ -1,7 +1,11 @@
-# 1 "canal.c"
+# 1 "test2.c"
 # 1 "<built-in>"
 # 1 "<command-line>"
-# 1 "canal.c"
+# 1 "test2.c"
+
+
+
+
 # 1 "/usr/include/stdio.h" 1 3 4
 # 64 "/usr/include/stdio.h" 3 4
 # 1 "/usr/include/sys/cdefs.h" 1 3 4
@@ -425,7 +429,7 @@ extern int __vsnprintf_chk (char * , size_t, int, size_t,
        const char * , va_list)
   ;
 # 500 "/usr/include/stdio.h" 2 3 4
-# 2 "canal.c" 2
+# 6 "test2.c" 2
 # 1 "/usr/include/stdlib.h" 1 3 4
 # 65 "/usr/include/stdlib.h" 3 4
 # 1 "/usr/include/sys/wait.h" 1 3 4
@@ -1434,7 +1438,7 @@ void *valloc(size_t);
 
 
 
-# 3 "canal.c" 2
+# 7 "test2.c" 2
 # 1 "/usr/include/string.h" 1 3 4
 # 79 "/usr/include/string.h" 3 4
 
@@ -1633,24 +1637,18 @@ __inline_strncat_chk (char * __dest, const char * __src,
   return __builtin___strncat_chk (__dest, __src, __len, __builtin_object_size (__dest, 2 > 1));
 }
 # 191 "/usr/include/string.h" 2 3 4
-# 4 "canal.c" 2
+# 8 "test2.c" 2
 
-# 1 "canal.h" 1
+# 1 "../canal.h" 1
 extern int yyparse();
 
 int cpp(int, char **);
 
 
-typedef double (*func_t) (double);
-
-
 struct symrec {
   char *name;
   int type;
-  union {
-    double var;
-    func_t fnctptr;
-  } value;
+  int value;
   struct symrec *next;
 };
 
@@ -1659,14 +1657,20 @@ typedef struct symrec symrec;
 
 extern symrec *sym_table;
 
+symrec *put_sym(char const *, int);
 int sym_type(const char *);
 
-symrec *put_sym(char const *, int);
-symrec *get_sym(char const *);
-# 6 "canal.c" 2
 
+typedef struct ident {
+  int type;
+  struct ident *previous;
+} ident;
 
-symrec *sym_table;
+extern ident *id_stack;
+
+ident *push_ident(int);
+void pop_ident(char const *);
+# 10 "test2.c" 2
 
 int usage(register char *name) {
  fputs("usage: ", __stderrp);
@@ -1700,7 +1704,7 @@ int main(int argc, char **argv) {
   perror("C preprocessor"), exit(1);
  exit(yyparse());
 }
-# 51 "canal.c"
+# 52 "test2.c"
 int cpp(int argc, char **argv) {
  char **argp, *cmd;
  extern FILE *yyin;
@@ -1732,24 +1736,4 @@ int cpp(int argc, char **argv) {
 int sym_type(const char *s) {
 
  return 0;
-}
-
-symrec* put_sym(const char *sym_name, int sym_type) {
-       symrec *ptr = (symrec *) malloc (sizeof (symrec));
-       ptr->name = (char *) malloc (strlen (sym_name) + 1);
-       ((__builtin_object_size (ptr->name, 0) != (size_t) -1) ? __builtin___strcpy_chk (ptr->name, sym_name, __builtin_object_size (ptr->name, 2 > 1)) : __inline_strcpy_chk (ptr->name, sym_name));
-       ptr->type = sym_type;
-       ptr->value.var = 0;
-       ptr->next = (struct symrec *)sym_table;
-       sym_table = ptr;
-       return ptr;
-}
-
-symrec* get_sym(const char *sym_name) {
-       symrec *ptr;
-       for (ptr = sym_table; ptr != (symrec *) 0;
-            ptr = (symrec *)ptr->next)
-         if (strcmp (ptr->name,sym_name) == 0)
-           return ptr;
-       return 0;
 }

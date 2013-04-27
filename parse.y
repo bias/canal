@@ -1,5 +1,4 @@
 %{
-#define YYSTYPE char *
 #include <stdio.h>
 #include "canal.h"
 extern int yylex();
@@ -27,20 +26,22 @@ extern int yyparse();
 %start translation_unit
 
 %union {
-  char *a;
-  int fn;
+  int num;
+  char *string;
 }
+
+%debug
+
+/* NOTE pop_ident looks for a flagged typedef_name or enumeration_constant and pushes the respective ident onto the table */
 
 %%
 
 statement 
-	: error  							{ printf("error\n"); }
-	/*| primary_expression error 			{ printf("error\n"); } */
-	| primary_expression
+	: primary_expression                
 	;
 
 primary_expression
-	: IDENTIFIER
+	: IDENTIFIER                        { fprintf(stderr, "y:primary_expression\n"); }
 	| constant
 	| string
 	| '(' expression ')'
@@ -54,7 +55,7 @@ constant
 	;
 
 enumeration_constant		/* before it has been defined as such */
-	: IDENTIFIER
+	: IDENTIFIER                        { pop_ident($<string>1); }
 	;
 
 string
@@ -81,8 +82,8 @@ postfix_expression
 	| postfix_expression '[' expression ']'
 	| postfix_expression '(' ')'
 	| postfix_expression '(' argument_expression_list ')'
-	| postfix_expression '.' IDENTIFIER
-	| postfix_expression PTR_OP IDENTIFIER
+	| postfix_expression '.' IDENTIFIER                                 {  }
+	| postfix_expression PTR_OP IDENTIFIER                              {  }
 	| postfix_expression INC_OP
 	| postfix_expression DEC_OP
 	| '(' type_name ')' '{' initializer_list '}'
@@ -216,12 +217,12 @@ declaration
 	;
 
 declaration_specifiers
-	: storage_class_specifier declaration_specifiers
-	| storage_class_specifier
-	| type_specifier declaration_specifiers
-	| type_specifier
-	| type_qualifier declaration_specifiers
-	| type_qualifier
+	: storage_class_specifier declaration_specifiers            
+	| storage_class_specifier                                   
+	| type_specifier declaration_specifiers                     { fprintf(stderr, "y:type_specifier %s\n", $<string>1);  }
+	| type_specifier                                            { fprintf(stderr, "y:type_specifier %s\n", $<string>1);  }
+	| type_qualifier declaration_specifiers                     { fprintf(stderr, "y:type_qual %s\n", $<string>1);  }
+	| type_qualifier                                            { fprintf(stderr, "y:type_qual %s\n", $<string>1);  }
 	| function_specifier declaration_specifiers
 	| function_specifier
 	| alignment_specifier declaration_specifiers
@@ -239,7 +240,7 @@ init_declarator
 	;
 
 storage_class_specifier
-	: TYPEDEF	/* identifiers must be flagged as TYPEDEF_NAME */
+	: TYPEDEF	                                    { fprintf(stderr, "y:typedef\n"); push_ident(TYPEDEF_NAME); } /* XXX identifiers must be flagged as TYPEDEF_NAME */ 
 	| EXTERN
 	| STATIC
 	| THREAD_LOCAL
@@ -248,49 +249,55 @@ storage_class_specifier
 	;
 
 type_specifier
-	: VOID
-	| CHAR
-	| SHORT
-	| INT
-	| LONG
-	| FLOAT
-	| DOUBLE
-	| SIGNED
-	| UNSIGNED
-	| BOOL
-	| COMPLEX
-	| IMAGINARY	  	/* non-mandated extension */
-	| atomic_type_specifier
-	| struct_or_union_specifier
-	| enum_specifier
+	: VOID                                                                      
+	| CHAR                                                                      
+	| SHORT                                                                     
+	| INT                                                                       
+	| LONG                                                                      
+	| FLOAT                                                                     
+	| DOUBLE                                                                    
+	| SIGNED                                                                    
+	| UNSIGNED                                                                      
+	| BOOL                                                                          
+	| COMPLEX                                                                       
+	| IMAGINARY	  	/* non-mandated extension */                                    
+	| atomic_type_specifier                                                         
+	| struct_or_union_specifier                                                     
+	| enum_specifier                                                                
 	| TYPEDEF_NAME		/* after it has been defined as such */
+    /*| error             /* XXX if we haven't added the type to the symbol table */        /*  { fprintf(stderr, "$$$$$ type not defined %s\n", $<string>1); } */
 	;
 
 struct_or_union_specifier
-	: struct_or_union '{' struct_declaration_list '}'
-	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-	| struct_or_union IDENTIFIER
+	: STRUCT '{' struct_declaration_list '}'                           { fprintf(stderr, "y:struct\n") ; pop_ident(NULL); }
+	| STRUCT IDENTIFIER '{' struct_declaration_list '}'                { fprintf(stderr, "y:struct%s\n", $<string>2); put_sym($<string>2, TYPEDEF_NAME); pop_ident(NULL); }
+	| STRUCT IDENTIFIER                                                { fprintf(stderr, "y:struct%s\n", $<string>2); pop_ident(NULL); }
+	| UNION '{' struct_declaration_list '}'                           { fprintf(stderr, "y:union\n") ; pop_ident(NULL); }
+	| UNION IDENTIFIER '{' struct_declaration_list '}'                { fprintf(stderr, "y:union %s\n", $<string>2); put_sym($<string>2, TYPEDEF_NAME); pop_ident(NULL); }
+	| UNION IDENTIFIER                                                { fprintf(stderr, "y:union %s\n", $<string>2); pop_ident(NULL); }
 	;
 
+/*
 struct_or_union
-	: STRUCT
-	| UNION
+	: STRUCT                                                                    
+	| UNION                                                                     
 	;
+*/
 
 struct_declaration_list
-	: struct_declaration
-	| struct_declaration_list struct_declaration
+	: struct_declaration                                                        
+	| struct_declaration_list struct_declaration                                
 	;
 
 struct_declaration
-	: specifier_qualifier_list ';'	/* for anonymous struct/union */
+	: specifier_qualifier_list ';'	        /* for anonymous struct/union */    
 	| specifier_qualifier_list struct_declarator_list ';'
 	| static_assert_declaration
 	;
 
 specifier_qualifier_list
-	: type_specifier specifier_qualifier_list
-	| type_specifier
+	: type_specifier specifier_qualifier_list                               { fprintf(stderr, "y:type_specifier %s\n", $<string>1);  }
+	| type_specifier                                                        { fprintf(stderr, "y:type_specifier %s\n", $<string>1);  }
 	| type_qualifier specifier_qualifier_list
 	| type_qualifier
 	;
@@ -309,9 +316,9 @@ struct_declarator
 enum_specifier
 	: ENUM '{' enumerator_list '}'
 	| ENUM '{' enumerator_list ',' '}'
-	| ENUM IDENTIFIER '{' enumerator_list '}'
-	| ENUM IDENTIFIER '{' enumerator_list ',' '}'
-	| ENUM IDENTIFIER
+	| ENUM IDENTIFIER '{' enumerator_list '}'               {  }
+	| ENUM IDENTIFIER '{' enumerator_list ',' '}'           {  }
+	| ENUM IDENTIFIER                                       {  }
 	;
 
 enumerator_list
@@ -319,9 +326,9 @@ enumerator_list
 	| enumerator_list ',' enumerator
 	;
 
-enumerator	/* identifiers must be flagged as ENUMERATION_CONSTANT */
-	: enumeration_constant '=' constant_expression
-	| enumeration_constant
+enumerator	/* XXX identifiers must be flagged as ENUMERATION_CONSTANT */
+	: enumeration_constant '=' constant_expression          { push_ident(ENUMERATION_CONSTANT); }
+	| enumeration_constant                                  { push_ident(ENUMERATION_CONSTANT); }
 	;
 
 atomic_type_specifier
@@ -351,7 +358,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER
+	: IDENTIFIER                                                                            { pop_ident($<string>1); }
 	| '(' declarator ')'
 	| direct_declarator '[' ']'
 	| direct_declarator '[' '*' ']'
@@ -397,8 +404,8 @@ parameter_declaration
 	;
 
 identifier_list
-	: IDENTIFIER
-	| identifier_list ',' IDENTIFIER
+	: IDENTIFIER                                                    { fprintf(stderr, "y:identifier_list\n"); pop_ident($<string>1); }
+	| identifier_list ',' IDENTIFIER                                { fprintf(stderr, "y:identifier_list\n"); pop_ident($<string>3); }
 	;
 
 type_name
@@ -460,7 +467,7 @@ designator_list
 
 designator
 	: '[' constant_expression ']'
-	| '.' IDENTIFIER
+	| '.' IDENTIFIER                                                                    {  }
 	;
 
 static_assert_declaration
@@ -477,7 +484,7 @@ statement
 	;
 
 labeled_statement
-	: IDENTIFIER ':' statement
+	: IDENTIFIER ':' statement                                                          {  }
 	| CASE constant_expression ':' statement
 	| DEFAULT ':' statement
 	;
@@ -518,7 +525,7 @@ iteration_statement
 	;
 
 jump_statement
-	: GOTO IDENTIFIER ';'
+	: GOTO IDENTIFIER ';'                                                                       {  }
 	| CONTINUE ';'
 	| BREAK ';'
 	| RETURN ';'
@@ -547,10 +554,3 @@ declaration_list
 
 %%
 
-/*
-#include <stdio.h>
-yyerror(const char *s) {
-	fflush(stdout);
-	fprintf(stderr, "*** %s\n", s);
-}
-*/

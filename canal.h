@@ -15,5 +15,16 @@ typedef struct symrec symrec;
 /* The symbol table: a chain of `struct symrec'.  */
 extern symrec *sym_table;
 
-int sym_type(const char *);
 symrec *put_sym(char const *, int);
+int sym_type(const char *);
+
+/* ident flag */
+typedef struct ident {
+  int type;
+  struct ident *previous; 
+} ident;
+
+extern ident *id_stack;
+
+ident *push_ident(int);
+void pop_ident(char const *);
