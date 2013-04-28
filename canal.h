@@ -2,16 +2,35 @@ extern int yyparse();
 
 int cpp(char *);
 
+
+/*
+ * File Context
+ *
+ * In order to resolve symbols we must first run the preprocessor which will expand macros viz #include.
+ * However, we're not necessarily interested in the stats of the included files, so we'll track where symbols are
+ * defined and allow a second pass that discardes macros and uses the previously discovered external definitions
+ * but forgets the type/enum defs in that file.
+ */
+
+void file_context(char const *, int);
+
+typedef struct fcontext {
+  char *name;
+  int line;
+} file_context;
+
+extern file_context f_context;
+
+
 /*
  * Symbol table
  */
 
-/* Data type for links in the chain of symbols.  */
 typedef struct symrec {
-  char *name;  /* name of symbol */
-  int type;    /* type of symbol: ident, type_def_name, enumeration constant */
-  int value;   /* incase we want to save cont values */
-  struct symrec *next;  /* link field */
+  char *name;
+  int type;
+  char *file;
+  struct symrec *next;
 } symrec;
 
 /* The symbol table: a chain of `struct symrec'.  */

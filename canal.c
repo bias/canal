@@ -14,7 +14,7 @@ ident *id_stack;
 extern int yydebug;
 
 int usage(register char *name) {
-	fprintf(stderr, "usage: %s [C preprocessor options] [source]\n", name);
+	fprintf(stderr, "usage: %s [source]\n", name);
 	exit(1);
 }
 

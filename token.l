@@ -37,12 +37,7 @@ char linebuf[512];
 
 \n.*					{ strncpy(linebuf, yytext+1, sizeof(linebuf)); yyless(1); }
 
-"#".*							  	  { }
-
-"/*"								  { BEGIN(C_COMMENT); }
-<C_COMMENT>"*/"						  { BEGIN(INITIAL); }
-<C_COMMENT>(.|\n)					  ;
-"//".*                                ;
+"#"{WS}+{D}+{WS}+\"([^"\\n]|{ES})*\"							  	  { file_context("file", 0); /* FIXME splice string and line num from yytext */ }
 
 "auto"					{ yylval.string = strdup(yytext); fprintf(stderr, "t:AUTO auto", ); return(AUTO); }
 "break"					{ yylval.string = strdup(yytext); fprintf(stderr, "t:AUTO auto", ); return(BREAK); }
