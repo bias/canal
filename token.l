@@ -37,16 +37,15 @@ char linebuf[512];
 
 \n.*					{ strncpy(linebuf, yytext+1, sizeof(linebuf)); yyless(1); }
 
-"#".*							  	  { fprintf(stdout, "tok macro\n"); }
+"#".*							  	  { }
 
-"/*"								  { BEGIN(C_COMMENT); fprintf(stdout, "tok comment block\n"); }
+"/*"								  { BEGIN(C_COMMENT); }
 <C_COMMENT>"*/"						  { BEGIN(INITIAL); }
 <C_COMMENT>(.|\n)					  ;
-
 "//".*                                ;
 
-"auto"					{ yylval.string = strdup(yytext); return(AUTO); }
-"break"					{ yylval.string = strdup(yytext); return(BREAK); }
+"auto"					{ yylval.string = strdup(yytext); fprintf(stderr, "t:AUTO auto", ); return(AUTO); }
+"break"					{ yylval.string = strdup(yytext); fprintf(stderr, "t:AUTO auto", ); return(BREAK); }
 "case"					{ yylval.string = strdup(yytext); return(CASE); }
 "char"					{ yylval.string = strdup(yytext); return(CHAR); }
 "const"					{ yylval.string = strdup(yytext); return(CONST); }

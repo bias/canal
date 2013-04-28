@@ -1,6 +1,6 @@
 extern int yyparse();
 
-int cpp(int, char **);
+int cpp(char *);
 
 /*
  * Symbol table

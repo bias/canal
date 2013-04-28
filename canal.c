@@ -14,23 +14,21 @@ ident *id_stack;
 extern int yydebug;
 
 int usage(register char *name) {
-	fputs("usage: ", stderr);
-	fputs(name, stderr);
-	fputs(" [C preprocessor options] [source]\n", stderr);
+	fprintf(stderr, "usage: %s [C preprocessor options] [source]\n", name);
 	exit(1);
 }
 
 int main(int argc, char **argv) {
 
-	setbuf(stderr, NULL);
-
 	char **argp;
 	int cppflag = 0;
+
+	int yyreturn;
 
 	for (argp = argv; *++argp && **argp == '-'; )
 		switch ((*argp)[1]) {
 			case 'U':
-				cppflag = 1; break;
+				cppflag	= 1; break;
 			case 'd':
 				yydebug	= 1; break;
 			default: 
@@ -41,37 +39,32 @@ int main(int argc, char **argv) {
 		usage(argv[0]);
 	if (*argp && !freopen(*argp, "r", stdin))
 		perror(*argp), exit(1);
-	if (cppflag && cpp(argc, argv))
+	if (cppflag && cpp(*argp))
 		perror("C preprocessor"), exit(1);
 
-	exit(yyparse());
+	yyreturn = yyparse();
+
+	return yyreturn;
 }
 
 /*
  *		cpp() -- preprocess lex input() through C preprocessor
  */
-
 #ifndef CPP /* filename of C preprocessor */
-#define CPP "/usr/bin/cpp"
+#define CPP "./cpp_clean"
 #endif
 
-int cpp(int argc, char **argv) {
-	char **argp, *cmd;
+int cpp(char *argv) {
+	char *cmd;
 	extern FILE *yyin;	/* for lex input() */
 	extern FILE *popen();
 	int i;
 
-	for (i=0, argp = argv; *++argp; )
-		if (**argp == '-' && index("CDEIUP", (*argp)[1]))
-			i += strlen(*argp) + 1;
-
-	if (!(cmd = (char*) calloc(i + sizeof(CPP), sizeof(char))))
-		return -1; /* no room */
+	cmd = (char*) calloc(sizeof(CPP)+strlen(argv)+1, sizeof(char));
 
 	strcpy(cmd, CPP);
-	for (argp = argv; *++argp; )
-		if (**argp == '-' && index("CDEIPU", (*argp)[1]))
-			strcat(cmd, " "), strcat(cmd, *argp);
+	strcat(cmd, " "); 
+	strcat(cmd, argv);
 
 	if ( (yyin = popen(cmd, "r")) )
 		i = 0; /* all's well */
@@ -100,17 +93,17 @@ symrec* put_sym(const char *sym_name, int sym_type) {
 	ptr->next = (struct symrec *)sym_table;
 	sym_table = ptr;
 
-	fprintf(stderr, "+++++ +++ + sym_table: ");
+	/*fprintf(stderr, "+++++ +++ + sym_table: ");
 	symrec *sym;
 	for (sym = sym_table; sym != (symrec *) 0; sym = (symrec *)sym->next)
 		fprintf(stderr, "%s, ", sym->name);
 	fprintf(stderr, "\n");
-
+	*/
 	return ptr;
 }
 
 ident* push_ident(int sym_type) {
-	fprintf(stderr, "\t *pushing %d onto stack\n", sym_type);
+	//fprintf(stderr, "\t *pushing %d onto stack\n", sym_type);
 	ident *id = (ident *) malloc (sizeof (ident));	
 	id->type = sym_type;
 	id->previous = (ident *)id_stack; 
@@ -120,7 +113,7 @@ ident* push_ident(int sym_type) {
 
 void cur_ident(char const *name) {
 	if ( id_stack != NULL ) {
-		fprintf(stderr, "\t swap cur name %s to %s\n", id_stack->name, name);
+		//fprintf(stderr, "\t swap cur name %s to %s\n", id_stack->name, name);
 		id_stack->name = name;	
 	}
 }
@@ -130,9 +123,9 @@ void pop_ident() {
 	if (id != NULL) {
 		if (id->name != NULL & id->type != 0)
 			put_sym(id->name, id->type);
-		else
-			fprintf(stderr, "\t no cur name!\n");
-		fprintf(stderr, "\t *popping\n");
+		//else
+		//	fprintf(stderr, "\t no cur name!\n");
+		//fprintf(stderr, "\t *popping\n");
 		if ( id->previous == NULL )
 			id_stack = NULL;
 		else
