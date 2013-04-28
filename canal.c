@@ -128,7 +128,7 @@ void cur_ident(char const *name) {
 void pop_ident() {
 	ident *id = id_stack;
 	if (id != NULL) {
-		if (id->name != NULL)
+		if (id->name != NULL & id->type != 0)
 			put_sym(id->name, id->type);
 		else
 			fprintf(stderr, "\t no cur name!\n");

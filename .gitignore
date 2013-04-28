@@ -1,3 +1,6 @@
 canal
 parse.h
 *.o
+linux/
+mystuff/
+stdlib/
