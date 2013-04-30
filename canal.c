@@ -1,17 +1,11 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>		/* fprintf */
+#include <stdlib.h>		/* ??? */
+#include <string.h>		/* ??? */
+#include <unistd.h>		/* for dup */
+#include <fcntl.h>		/* for open */
 
 #include "canal.h"
-#include "parse.h" /* for symbol definitions */
-
-/* The symbol table */
-symrec *sym_table;
-
-/* The identifier resolution stack */
-ident *id_stack;
-
-extern int yydebug;
+#include "parse.h" /* for lexer token definitions */
 
 int usage(register char *name) {
 	fprintf(stderr, "usage: %s [source]\n", name);
@@ -21,59 +15,96 @@ int usage(register char *name) {
 int main(int argc, char **argv) {
 
 	char **argp;
-	int cppflag = 0;
+	int cppflag = 1;
 
-	int yyreturn;
-
+	/* FIXME this should really use getopt */
 	for (argp = argv; *++argp && **argp == '-'; )
 		switch ((*argp)[1]) {
-			case 'U':
-				cppflag	= 1; break;
+			case 'P':
+				cppflag	= 0; break;
 			case 'd':
 				yydebug	= 1; break;
 			default: 
 				usage(argv[0]);
 		}
 
+	/* XXX let's pray to god that the remaining arg is our file name */
+	file_name = *argp;
+	in_file = 1;
+
 	if (argp[0] && argp[1])
 		usage(argv[0]);
-	if (*argp && !freopen(*argp, "r", stdin))
-		perror(*argp), exit(1);
-	if (cppflag && cpp(*argp))
+	if (*argp && !freopen(file_name, "r", stdin))
+		perror(file_name), exit(1);
+	if (cppflag && cpp(file_name))
 		perror("C preprocessor"), exit(1);
 
-	yyreturn = yyparse();
-
-	return yyreturn;
+	return yyparse();
 }
 
-/*
- *		cpp() -- preprocess lex input() through C preprocessor
+
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  Preprocess 
  */
-#ifndef CPP /* filename of C preprocessor */
-#define CPP "./cpp_clean"
-#endif
 
 int cpp(char *argv) {
 	char *cmd;
-	extern FILE *yyin;	/* for lex input() */
 	extern FILE *popen();
 	int i;
 
 	cmd = (char*) calloc(sizeof(CPP)+strlen(argv)+1, sizeof(char));
-
-	strcpy(cmd, CPP);
-	strcat(cmd, " "); 
-	strcat(cmd, argv);
-
-	if ( (yyin = popen(cmd, "r")) )
-		i = 0; /* all's well */
-	else
-		i = -1;
+	strcpy(cmd, CPP), strcat(cmd, " "), strcat(cmd, argv);
+	yyin = popen(cmd, "r");
 	free(cmd);
 
-	return i;
+	return 0; /* XXX what? */
 }
+
+
+/*  ***** ***** ***** ***** ***** ***** *****
+ *	File Context
+ */
+void tok_cpp_file(char const *file_spec) {
+	char *spec;
+
+	spec = strdup(file_spec);
+	strtok(spec, "\"");
+	file_context(strtok(NULL, "\""));
+
+	free(spec);
+}
+
+/* If it's not our file redirect to /dev/null */
+void file_context(char const *m_file_name) {  
+
+	int diff = strcmp(m_file_name, file_name);
+
+	if ( !diff  && in_file) {
+		/* nothing */
+	} else if ( !diff && !in_file ) {
+		/* swap back to stdin */
+		fflush(stdout);
+		dup2(fd_swap, 1);
+		close(fd_swap);
+		in_file = 1;
+	} else if ( diff && in_file ) {
+		/* swap to null */
+		fflush(stdout);
+		fd_swap = dup(1);
+		fd_null = open("/dev/null", O_WRONLY);
+		dup2(fd_null, 1);
+		close(fd_null);
+		in_file = 0;
+	} else {
+		/* nothing */
+	}
+
+}
+
+
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  Symbol table
+ */
 
 int sym_type(const char *sym_name) {
 	symrec *ptr;
@@ -89,7 +120,6 @@ symrec* put_sym(const char *sym_name, int sym_type) {
 	ptr->name = (char *) malloc (strlen (sym_name) + 1);
 	strcpy (ptr->name,sym_name);
 	ptr->type = sym_type;
-	ptr->value = 0;  
 	ptr->next = (struct symrec *)sym_table;
 	sym_table = ptr;
 
@@ -101,6 +131,11 @@ symrec* put_sym(const char *sym_name, int sym_type) {
 	*/
 	return ptr;
 }
+
+
+/*
+ * Identifier stack
+ */
 
 ident* push_ident(int sym_type) {
 	//fprintf(stderr, "\t *pushing %d onto stack\n", sym_type);

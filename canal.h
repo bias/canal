@@ -1,53 +1,71 @@
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  External Bison constructs
+ */
+
 extern int yyparse();
+extern int yydebug;
+extern FILE *yyin;	
+
+
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  Preprocess 
+ */
+
+/* filename of C preprocessor */
+#ifndef CPP 
+#define CPP "./cpp_clean"
+#endif
 
 int cpp(char *);
 
 
-/*
- * File Context
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  File Context
  *
  * In order to resolve symbols we must first run the preprocessor which will expand macros viz #include.
- * However, we're not necessarily interested in the stats of the included files, so we'll track where symbols are
- * defined and allow a second pass that discardes macros and uses the previously discovered external definitions
- * but forgets the type/enum defs in that file.
+ * However, we're not necessarily interested in the stats of the included files, 
+ * so we'll switch on and off output depending on the file which is something demarcated by the preprocessor.
  */
 
-void file_context(char const *, int);
+char *file_name;
+int fd_swap, fd_null;
+int in_file;
 
-typedef struct fcontext {
-  char *name;
-  int line;
-} file_context;
+/* Tokenize preprocessor file statements */
+void tok_cpp_file(char const *);
 
-extern file_context f_context;
+/* If it's not our file redirect to /dev/null */
+void file_context(char const *);
 
 
-/*
- * Symbol table
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  Symbol table
  */
 
 typedef struct symrec {
   char *name;
   int type;
-  char *file;
   struct symrec *next;
 } symrec;
 
-/* The symbol table: a chain of `struct symrec'.  */
-extern symrec *sym_table;
+symrec *sym_table;
 
+/* put symbol in table */
 symrec *put_sym(char const *, int);
+
+/* resolve ident/sym/enum for lexer */
 int sym_type(const char *);
 
 
-/*
+/*  ***** ***** ***** ***** ***** ***** *****
  * Identifier stack
  * 
  * typedef_name will always resolve as either 
  *  - the last ident before a semicolon 
  *  - the ident previous to a struct/union block
  *
- *  enumeration_constant can be directly put in the table
+ *  enumeration_constant can be directly put in the table 
+ *  it reduces immediately after shifting
  */
 
 typedef struct ident {
@@ -56,7 +74,7 @@ typedef struct ident {
   struct ident *previous; 
 } ident;
 
-extern ident *id_stack;
+ident *id_stack;
 
 /* push new typedef onto stack */
 ident *push_ident(int);

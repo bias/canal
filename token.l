@@ -21,7 +21,7 @@ SP  (u8|u|U|L)
 ES  (\\(['"\?\\abfnrtv]|[0-7]{1,3}|x[a-fA-F0-9]+))
 WS  [ \t\v\n\f]
 
-%option warn nodefault yylineno
+%option warn yylineno
 
 %{
 #include <stdio.h>
@@ -37,10 +37,10 @@ char linebuf[512];
 
 \n.*					{ strncpy(linebuf, yytext+1, sizeof(linebuf)); yyless(1); }
 
-"#"{WS}+{D}+{WS}+\"([^"\\n]|{ES})*\"							  	  { file_context("file", 0); /* FIXME splice string and line num from yytext */ }
+"#".*							  	  { tok_cpp_file(yytext); }
 
-"auto"					{ yylval.string = strdup(yytext); fprintf(stderr, "t:AUTO auto", ); return(AUTO); }
-"break"					{ yylval.string = strdup(yytext); fprintf(stderr, "t:AUTO auto", ); return(BREAK); }
+"auto"					{ yylval.string = strdup(yytext); return(AUTO); }
+"break"					{ yylval.string = strdup(yytext); return(BREAK); }
 "case"					{ yylval.string = strdup(yytext); return(CASE); }
 "char"					{ yylval.string = strdup(yytext); return(CHAR); }
 "const"					{ yylval.string = strdup(yytext); return(CONST); }
@@ -149,7 +149,7 @@ char linebuf[512];
 "?"					{ yylval.string = strdup(yytext); return '?'; }
 
 {WS}					{ /* whitespace separates tokens */ }
-.					{ /* discard bad characters */ }
+.					    { /* discard bad characters */ }
 
 %%
 
