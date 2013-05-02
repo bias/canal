@@ -1,13 +1,4 @@
 /*  ***** ***** ***** ***** ***** ***** *****
- *  External Bison constructs
- */
-
-extern int yyparse();
-extern int yydebug;
-extern FILE *yyin;	
-
-
-/*  ***** ***** ***** ***** ***** ***** *****
  *  Preprocess 
  */
 
@@ -84,3 +75,28 @@ void cur_ident(char const *);
 
 /* resolve the typedef as the current name */
 void pop_ident();
+
+
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  Syntax Tree
+ */
+
+
+/* nodes in the abstract syntax tree */
+typedef struct ast {
+  char *type;
+  char *value;
+  int num;
+  struct ast **children;
+} ast;
+
+ast *tree;
+
+/* build and AST, va_list on (struct ast *) */
+ast *new_ast(char const *, int, ...);
+
+/* free an AST */
+//void treefree(ast *);
+
+int cur_ast_num;
+void print_ast(ast *);
