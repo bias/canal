@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 	file_context(file_name); 
 	cur_ast_num = 0;
 	tree->num = 0;
-	print_ast(tree);	
+	//serialize_ast(tree);	
 
 	return 0;
 }
@@ -201,19 +201,19 @@ ast *new_ast(char const *type, int num, ...) {
 
 	new_ast = malloc(sizeof(ast));
 	new_ast->children = malloc((num+1) * sizeof(ast *));
-	//fprintf(stderr, "%s = ", type);
+	fprintf(stderr, "%s = ", type);
 	new_ast->type = strdup(type);
 	new_ast->value = NULL;
 	if (num) {
 		va_start(argp, num);
 		for (n = 0; n < num; n++) {
 			new_ast->children[n] = va_arg(argp, ast *);	
-			//fprintf(stderr, "%s ", new_ast->children[n]->type);
+			fprintf(stderr, "%s ", new_ast->children[n]->type);
 		}
 		va_end(argp);
 	}
 	new_ast->children[num] = NULL;	
-	//fprintf(stderr, "\n");
+	fprintf(stderr, "\n");
 	return new_ast;
 }
 
@@ -222,7 +222,7 @@ void print_ast(ast *ap) {
 	if (ap != NULL ) {
 		fprintf(stdout, "%d:%s ", ap->num, ap->type);
 		if (ap->value != NULL)
-			fprintf(stdout, "= %s", ap->value);
+			fprintf(stdout, "= \'%s\'", ap->value);
 		else
 			fprintf(stdout, "-> ");
 		int i; 
@@ -234,5 +234,31 @@ void print_ast(ast *ap) {
 		for (i = 0; ap->children[i] != NULL; i++) {	
 			print_ast(ap->children[i]);
 		}
+	}
+}
+
+void serialize_ast(ast *ap) {
+	/* breadth first walk */
+	if (ap != NULL ) {
+		if (ap->type[0] == '\'')
+			/* deal with lvals with \' in them */
+			fprintf(stdout, "Tree(%s, [", ap->type);
+		else
+			fprintf(stdout, "Tree(\'%s\', [", ap->type);
+
+		/* token leaf */
+		if (ap->value != NULL)
+			fprintf(stdout, "\'%s\'", ap->value);
+		else {
+			int i; 
+			for (i = 0; ap->children[i] != NULL; i++) {	
+				if (ap->children[i+1] == NULL)
+					serialize_ast(ap->children[i]);
+				else
+					serialize_ast(ap->children[i]);
+					fprintf(stdout, ", ");
+			}
+		}
+		fprintf(stdout, "])");
 	}
 }

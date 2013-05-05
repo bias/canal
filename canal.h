@@ -4,7 +4,7 @@
 
 /* filename of C preprocessor */
 #ifndef CPP 
-#define CPP "./cpp_clean"
+#define CPP "./scripts/cpp_clean"
 #endif
 
 int cpp(char *);
@@ -100,3 +100,4 @@ ast *new_ast(char const *, int, ...);
 
 int cur_ast_num;
 void print_ast(ast *);
+void serialize_ast(ast *);

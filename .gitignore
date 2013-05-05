@@ -3,5 +3,6 @@ parse.h
 *.o
 linux/
 mystuff/
+run_std
 stdlib/
 posix/

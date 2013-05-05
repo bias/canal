@@ -32,10 +32,6 @@ program
     : translation_unit              { tree = new_ast("program", 1, $1); }
     ;
 
-statement 
-    : primary_expression             { $$ = new_ast("statement", 1, $1); } 
-	;
-
 primary_expression
 	: IDENTIFIER                        { $$ = new_ast("primary_expression", 1, $1); }
 	| constant                          { $$ = new_ast("primary_expression", 1, $1); }
@@ -111,8 +107,9 @@ unary_operator
 	;
 
 cast_expression
-	: unary_expression                                  { $$ = new_ast("cast_expression", 1, $1); }   
-	| '(' type_name ')' cast_expression                 { $$ = new_ast("cast_expression", 4, $1, $2, $3, $4); }                              
+	: unary_expression                                          { $$ = new_ast("cast_expression", 1, $1); }   
+	| '(' type_name ')' cast_expression                         { $$ = new_ast("cast_expression", 4, $1, $2, $3, $4); }                              
+	| '(' struct_or_union type_name ')' cast_expression         { $$ = new_ast("cast_expression", 5, $1, $2, $3, $4, $5); }                              
 	;
 
 multiplicative_expression
@@ -264,9 +261,9 @@ type_specifier
 	;
 
 struct_or_union_specifier
-	: struct_or_union '{' struct_declaration_list '}'                           { $$ = new_ast("struct_or_union_specifier", 4, $1, $2, $3, $4); cur_ident(NULL);  }
+	: struct_or_union IDENTIFIER                                                { $$ = new_ast("struct_or_union_specifier", 2, $1, $2); cur_ident($2->value); }
+	| struct_or_union '{' struct_declaration_list '}'                           { $$ = new_ast("struct_or_union_specifier", 4, $1, $2, $3, $4); cur_ident(NULL);  }
 	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'                { $$ = new_ast("struct_or_union_specifier", 5, $1, $2, $3, $4, $5); cur_ident($2->value); }
-	| struct_or_union IDENTIFIER                                                { $$ = new_ast("struct_or_union_specifier", 2, $1, $2); cur_ident($2->value); }
 	;
 
 struct_or_union
@@ -471,7 +468,9 @@ statement
 	| selection_statement								{ $$ = new_ast("statment", 1, $1); }
 	| iteration_statement								{ $$ = new_ast("statment", 1, $1); }
 	| jump_statement								    { $$ = new_ast("statment", 1, $1); }
+    | primary_expression             { $$ = new_ast("statement", 1, $1); } 
 	;
+
 
 labeled_statement
 	: IDENTIFIER ':' statement                                              { $$ = new_ast("labeled_statement", 3, $1, $2, $3); }

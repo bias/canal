@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# we have to hardcode this relative to the root because we don't install into path
+gcc -E $1 | sed -f scripts/cpp_clean.sed
