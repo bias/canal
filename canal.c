@@ -26,11 +26,19 @@ int main(int argc, char **argv) {
 
 	char **argp;
 	int cppflag = 1;
+	int printflag = 0;
+	int statsflag = 1;
+	int tokflag = 0;
 
 	/* FIXME this should really use getopt */
+	/* XXX should some of these be mutually exclusive? */
 	for (argp = argv; *++argp && **argp == '-'; )
 		switch ((*argp)[1]) {
-			case 'P':
+			case 't':
+				tokflag = 1, statsflag=0; break;
+			case 'p':
+				printflag = 1; break;
+			case 'M':
 				cppflag	= 0; break;
 			case 'd':
 				yydebug	= 1; break;
@@ -51,12 +59,30 @@ int main(int argc, char **argv) {
 
 
 	yyparse();
-
 	/* we need to try to swap file contexts back to normal */
 	file_context(file_name); 
-	cur_ast_num = 0;
+
+
+	stat.order = 0;
+	stat.max_height = 0;
 	tree->num = 0;
-	//serialize_ast(tree);	
+	tree->height = 0;
+	ast_bfwalk(tree, &gen_heights);
+	leaves = NULL;
+	ast_bfwalk(tree, &gen_leaves);
+	tok_stats(leaves);
+
+	if (statsflag) {
+		fprintf(stdout, "%d %d %d %d %f\n", stat.order, stat.max_height, stat.max_height2, stat.ntoks, stat.avg_height);
+	}
+
+	if (printflag) {
+		ast_bfwalk(tree, &print_ast);	
+	}
+
+	if (tokflag) {
+		print_tok(leaves);
+	}
 
 	return 0;
 }
@@ -101,6 +127,7 @@ void file_context(char const *fname) {
 	else
 		diff = 1;
 
+	/* FIXME we're not writing to file anymore during parse change this */
 	if ( !diff  && in_file) {
 		/* nothing */
 	} else if ( !diff && !in_file ) {
@@ -201,64 +228,89 @@ ast *new_ast(char const *type, int num, ...) {
 
 	new_ast = malloc(sizeof(ast));
 	new_ast->children = malloc((num+1) * sizeof(ast *));
-	fprintf(stderr, "%s = ", type);
+	//fprintf(stderr, "%s = ", type);
 	new_ast->type = strdup(type);
-	new_ast->value = NULL;
+	new_ast->token = NULL;
 	if (num) {
 		va_start(argp, num);
 		for (n = 0; n < num; n++) {
 			new_ast->children[n] = va_arg(argp, ast *);	
-			fprintf(stderr, "%s ", new_ast->children[n]->type);
+			//fprintf(stderr, "%s ", new_ast->children[n]->type);
 		}
 		va_end(argp);
 	}
 	new_ast->children[num] = NULL;	
-	fprintf(stderr, "\n");
+	//fprintf(stderr, "\n");
 	return new_ast;
 }
 
+int ast_bfwalk(ast *ap, void (*funct)(ast *)) {
+	int i;
+	if (ap == NULL)
+		return -1;
+	(*funct)(ap);
+	for (i = 0; ap->children[i] != NULL; i++)
+		ast_bfwalk(ap->children[i], funct);
+	return 0;
+}
+
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  In house analysis
+ */
+
 void print_ast(ast *ap) {
-	/* breadth first walk */
 	if (ap != NULL ) {
 		fprintf(stdout, "%d:%s ", ap->num, ap->type);
-		if (ap->value != NULL)
-			fprintf(stdout, "= \'%s\'", ap->value);
+		if (ap->token != NULL)
+			fprintf(stdout, "= \'%s\'", ap->token);
 		else
 			fprintf(stdout, "-> ");
 		int i; 
 		for (i = 0; ap->children[i] != NULL; i++) {	
-			ap->children[i]->num = ++cur_ast_num;
+			ap->children[i]->num = ++stat.order;
 			fprintf(stdout, "%d:%s ", ap->children[i]->num, ap->children[i]->type);
 		}
 		fprintf(stdout, "\n");
-		for (i = 0; ap->children[i] != NULL; i++) {	
-			print_ast(ap->children[i]);
-		}
 	}
 }
 
-void serialize_ast(ast *ap) {
-	/* breadth first walk */
-	if (ap != NULL ) {
-		if (ap->type[0] == '\'')
-			/* deal with lvals with \' in them */
-			fprintf(stdout, "Tree(%s, [", ap->type);
-		else
-			fprintf(stdout, "Tree(\'%s\', [", ap->type);
-
-		/* token leaf */
-		if (ap->value != NULL)
-			fprintf(stdout, "\'%s\'", ap->value);
-		else {
-			int i; 
-			for (i = 0; ap->children[i] != NULL; i++) {	
-				if (ap->children[i+1] == NULL)
-					serialize_ast(ap->children[i]);
-				else
-					serialize_ast(ap->children[i]);
-					fprintf(stdout, ", ");
-			}
-		}
-		fprintf(stdout, "])");
+void gen_heights(ast *ap) {
+	int i; 
+	for (i = 0; ap->children[i] != NULL; i++) {	
+		ap->children[i]->num = stat.order++;
+		ap->children[i]->height = ap->height++;
 	}
+	ap->cvalance = i;
+}
+
+void gen_leaves(ast *ap) {
+	tokl *new_leaf;
+	if (ap->children[0] == NULL) {
+		new_leaf = malloc(sizeof(tokl));
+		new_leaf->ap = ap;
+		new_leaf->next = leaves;
+		leaves = new_leaf;
+	}
+}
+
+int tok_stats(tokl *l) {
+	if (l == NULL) {
+		return stat.avg_height = stat.avg_height / stat.ntoks;
+	}
+	stat.avg_height += l->ap->height;
+	stat.ntoks++;
+	if (l->ap->height > stat.max_height) {
+		stat.max_height2 = stat.max_height;
+		stat.max_height = l->ap->height;
+	}
+	else if (l->ap->height > stat.max_height2)
+		stat.max_height2 = stat.max_height2;
+	return tok_stats(l->next);
+}
+
+int print_tok(tokl *l) {
+	if (l==NULL)
+		return 0;
+	fprintf(stdout, "%s=\'%s\'\n", l->ap->type, l->ap->token);
+	return print_tok(l->next);
 }

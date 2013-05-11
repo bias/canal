@@ -2,7 +2,8 @@ LEX = flex
 YACC = bison
 YFLAGS = -d
 
-all: canal 
+# XXX please don't judge...
+all: clean canal 
 
 objects = token.o parse.o
 canal: $(objects)

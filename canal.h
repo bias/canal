@@ -85,8 +85,10 @@ void pop_ident();
 /* nodes in the abstract syntax tree */
 typedef struct ast {
   char *type;
-  char *value;
+  char *token;
   int num;
+  int height;
+  int cvalance;
   struct ast **children;
 } ast;
 
@@ -95,9 +97,40 @@ ast *tree;
 /* build and AST, va_list on (struct ast *) */
 ast *new_ast(char const *, int, ...);
 
-/* free an AST */
-//void treefree(ast *);
+/* free an AST (who want's to do that?) */
+/*void treefree(ast *);*/
 
-int cur_ast_num;
+int ast_bfwalk(ast *, void (*funct)(ast *));
+
+
+/*  ***** ***** ***** ***** ***** ***** *****
+ *  In house analysis
+ */
+
+typedef struct tokl {
+  ast *ap;
+  struct tokl *next;
+} tokl;
+tokl *leaves;
+
+typedef struct stats {
+  int order;
+  int max_height;
+  int max_height2;
+  float avg_height;
+  int ntoks;
+  int ntypes;
+} stats; 
+
+stats stat;
+
+/* prints adjacency rules */
 void print_ast(ast *);
-void serialize_ast(ast *);
+
+void gen_heights(ast *);
+
+void gen_leaves(ast *);
+
+int tok_stats(tokl *);
+
+int print_tok(tokl *);

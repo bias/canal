@@ -47,7 +47,7 @@ constant
 	;
 
 enumeration_constant		
-	: IDENTIFIER                        { put_sym($1->value, ENUMERATION_CONSTANT); $$ = new_ast("enumeration_constant", 1, $1); }
+	: IDENTIFIER                        { put_sym($1->token, ENUMERATION_CONSTANT); $$ = new_ast("enumeration_constant", 1, $1); }
 	;
 
 string
@@ -261,9 +261,9 @@ type_specifier
 	;
 
 struct_or_union_specifier
-	: struct_or_union IDENTIFIER                                                { $$ = new_ast("struct_or_union_specifier", 2, $1, $2); cur_ident($2->value); }
+	: struct_or_union IDENTIFIER                                                { $$ = new_ast("struct_or_union_specifier", 2, $1, $2); cur_ident($2->token); }
 	| struct_or_union '{' struct_declaration_list '}'                           { $$ = new_ast("struct_or_union_specifier", 4, $1, $2, $3, $4); cur_ident(NULL);  }
-	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'                { $$ = new_ast("struct_or_union_specifier", 5, $1, $2, $3, $4, $5); cur_ident($2->value); }
+	| struct_or_union IDENTIFIER '{' struct_declaration_list '}'                { $$ = new_ast("struct_or_union_specifier", 5, $1, $2, $3, $4, $5); cur_ident($2->token); }
 	;
 
 struct_or_union
@@ -345,7 +345,7 @@ declarator
 	;
 
 direct_declarator
-	: IDENTIFIER                                                                    { $$ = new_ast("direct_declarator", 1, $1); cur_ident($1->value); }
+	: IDENTIFIER                                                                    { $$ = new_ast("direct_declarator", 1, $1); cur_ident($1->token); }
 	| '(' declarator ')'								                            { $$ = new_ast("direct_declarator", 3, $1, $2, $3); }
 	| direct_declarator '[' ']'								                        { $$ = new_ast("direct_declarator", 3, $1, $2, $3); }
 	| direct_declarator '[' '*' ']'								                    { $$ = new_ast("direct_declarator", 4, $1, $2, $3, $4); }
@@ -391,8 +391,8 @@ parameter_declaration
 	;
 
 identifier_list
-	: IDENTIFIER                                                    { $$ = new_ast("identifier_list", 1, $1); cur_ident($1->value); }
-	| identifier_list ',' IDENTIFIER                                { $$ = new_ast("identifier_list", 3, $1, $2, $3); cur_ident($3->value); }
+	: IDENTIFIER                                                    { $$ = new_ast("identifier_list", 1, $1); cur_ident($1->token); }
+	| identifier_list ',' IDENTIFIER                                { $$ = new_ast("identifier_list", 3, $1, $2, $3); cur_ident($3->token); }
 	;
 
 type_name

@@ -1,7 +1,9 @@
 canal
 parse.h
+parse.c
 *.o
 linux/
+linux
 mystuff/
 run_std
 stdlib/

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 for f in $(ls test); do
-	./canal -P test/$f > /dev/null 2>&1
+	./canal -M test/$f > /dev/null 2>&1
     EXIT="$?"
 	if [[ $EXIT -ne 0 ]]; then
 		echo $f failed
