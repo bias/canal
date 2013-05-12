@@ -19,6 +19,7 @@ int cpp(char *);
  */
 
 char *file_name;
+int fc_flag;
 int fd_swap, fd_null;
 int in_file;
 
@@ -84,8 +85,13 @@ void pop_ident();
 
 /* nodes in the abstract syntax tree */
 typedef struct ast {
+  /* file context */
+  int file;
+  char *file_name;
+  /* lexical/syntatic */
   char *type;
   char *token;
+  /* stats */
   int num;
   int height;
   int cvalance;
@@ -95,7 +101,7 @@ typedef struct ast {
 ast *tree;
 
 /* build and AST, va_list on (struct ast *) */
-ast *new_ast(char const *, int, ...);
+ast *new_node(char const *, int, ...);
 
 /* free an AST (who want's to do that?) */
 /*void treefree(ast *);*/

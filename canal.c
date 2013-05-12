@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 	if (cppflag && cpp(file_name))
 		perror("C preprocessor"), exit(1);
 
-
+	fc_flag = 1;
 	yyparse();
 	/* we need to try to swap file contexts back to normal */
 	file_context(file_name); 
@@ -119,7 +119,6 @@ void tok_cpp_file(char const *file_spec) {
 	free(spec);
 }
 
-/* If it's not our file redirect to /dev/null */
 void file_context(char const *fname) {  
 	int diff;
 	if ( fname != NULL )
@@ -127,23 +126,14 @@ void file_context(char const *fname) {
 	else
 		diff = 1;
 
-	/* FIXME we're not writing to file anymore during parse change this */
 	if ( !diff  && in_file) {
 		/* nothing */
 	} else if ( !diff && !in_file ) {
-		/* swap back to stdin */
-		fflush(stdout);
-		dup2(fd_swap, 1);
-		close(fd_swap);
+		fc_flag = 1;
 		in_file = 1;
 	} else if ( diff && in_file ) {
-		/* swap to null */
-		fflush(stdout);
-		fd_swap = dup(1);
-		fd_null = open("/dev/null", O_WRONLY);
-		dup2(fd_null, 1);
-		close(fd_null);
 		in_file = 0;
+		fc_flag = 0;
 	} else {
 		/* nothing */
 	}
@@ -221,27 +211,27 @@ void pop_ident() {
  *  Syntax Tree
  */
 
-ast *new_ast(char const *type, int num, ...) {
+ast *new_node(char const *type, int num, ...) {
 	va_list argp;
-	ast *new_ast;
+	ast *new_node;
 	int n;
 
-	new_ast = malloc(sizeof(ast));
-	new_ast->children = malloc((num+1) * sizeof(ast *));
+	new_node = malloc(sizeof(ast));
+	new_node->children = malloc((num+1) * sizeof(ast *));
 	//fprintf(stderr, "%s = ", type);
-	new_ast->type = strdup(type);
-	new_ast->token = NULL;
+	new_node->type = strdup(type);
+	new_node->token = NULL;
 	if (num) {
 		va_start(argp, num);
 		for (n = 0; n < num; n++) {
-			new_ast->children[n] = va_arg(argp, ast *);	
-			//fprintf(stderr, "%s ", new_ast->children[n]->type);
+			new_node->children[n] = va_arg(argp, ast *);	
+			//fprintf(stderr, "%s ", new_node->children[n]->type);
 		}
 		va_end(argp);
 	}
-	new_ast->children[num] = NULL;	
+	new_node->children[num] = NULL;	
 	//fprintf(stderr, "\n");
-	return new_ast;
+	return new_node;
 }
 
 int ast_bfwalk(ast *ap, void (*funct)(ast *)) {
