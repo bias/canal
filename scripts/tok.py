@@ -2,6 +2,8 @@
 
 import sys, re, operator
 
+import nltk
+
 from nltk.tree import *
 from nltk.draw import tree
 
@@ -30,16 +32,30 @@ for word, tag in tuple_list:
 	else:
 		word_tag[word][tag] += 1
 
-print "(#Types, #Tokens)"
+fdist = nltk.FreqDist(t for w,t in tuple_list)
+#fdist.B()
+fdist.plot()
+
+fdist = nltk.FreqDist(w for w,t in tuple_list)
+#fdist.B()
+fdist.plot()
+
+print "(#Types, #Unique tokens)"
 print len(tag_freq), len(word_freq), "\n"
 
-print "Most frequent tag: (tag, freq)"
+print "Most frequent type: (tag, freq)"
 print sorted(tag_freq.iteritems(), key=operator.itemgetter(1), reverse=True)[0], "\n"
 
 word_tag_list = sorted(word_tag.iteritems(), key=operator.itemgetter(1), reverse=True)
 
-print "Most frequent type: (word, num tags)"
+print "Most frequent token: (word, num tags)"
 print sorted(word_freq.iteritems(), key=operator.itemgetter(1), reverse=True)[0], "\n"
+
+print "2nd Most frequent token: (word, num tags)"
+print sorted(word_freq.iteritems(), key=operator.itemgetter(1), reverse=True)[1], "\n"
+
+print "3rd Most frequent token: (word, num tags)"
+print sorted(word_freq.iteritems(), key=operator.itemgetter(1), reverse=True)[2], "\n"
 
 #print "Tagged sentences for each tag of the most tagged word: [sents]"
 #tagged_sents = brown.tagged_sents(categories='news')
@@ -50,3 +66,4 @@ print sorted(word_freq.iteritems(), key=operator.itemgetter(1), reverse=True)[0]
 #			tag_sents.append(sent)	
 #			break
 #print tag_sents, "\n"
+

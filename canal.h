@@ -133,6 +133,8 @@ stats stat;
 /* prints adjacency rules */
 void print_ast(ast *);
 
+void print_penn(ast *);
+
 void gen_heights(ast *);
 
 void gen_leaves(ast *);

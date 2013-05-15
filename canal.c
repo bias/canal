@@ -25,8 +25,10 @@ int usage(register char *name) {
 int main(int argc, char **argv) {
 
 	char **argp;
+	/* make this a bitfield */
 	int cppflag = 1;
 	int printflag = 0;
+	int pennflag = 0;
 	int statsflag = 1;
 	int tokflag = 0;
 
@@ -37,7 +39,9 @@ int main(int argc, char **argv) {
 			case 't':
 				tokflag = 1, statsflag=0; break;
 			case 'p':
-				printflag = 1; break;
+				printflag = 1, statsflag=0; break;
+			case 'e':
+				pennflag = 1, statsflag=0; break;
 			case 'M':
 				cppflag	= 0; break;
 			case 'd':
@@ -78,6 +82,10 @@ int main(int argc, char **argv) {
 
 	if (printflag) {
 		ast_bfwalk(tree, &print_ast);	
+	}
+
+	if (pennflag) {
+		print_penn(tree);
 	}
 
 	if (tokflag) {
@@ -261,6 +269,21 @@ void print_ast(ast *ap) {
 			fprintf(stdout, "%d:%s ", ap->children[i]->num, ap->children[i]->type);
 		}
 		fprintf(stdout, "\n");
+	}
+}
+
+void print_penn(ast *ap) {
+	int i; 
+	if (ap != NULL ) {
+		fprintf(stdout, "(%s ", ap->type);
+		for (i = 0; ap->children[i] != NULL; i++) {	
+			if ( ap->children[i]->token == NULL )
+				print_penn(ap->children[i]);
+		}
+		if (ap->children[0] != NULL && ap->children[0]->token != NULL)
+			fprintf(stdout, "\'%s\') ", ap->children[0]->token);
+		else
+			fprintf(stdout, ") ");
 	}
 }
 
